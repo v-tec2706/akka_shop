@@ -176,19 +176,19 @@ object CheckoutTest {
         result
       }
 
-       def selectingDelivery(timer: Cancellable): Receive = {
+      override def selectingDelivery(timer: Cancellable): Receive = {
         val result = super.selectingDelivery(timer)
         sender ! selectingDeliveryMsg
         result
       }
 
-       def selectingPaymentMethod(timer: Cancellable): Receive = {
+      override def selectingPaymentMethod(timer: Cancellable): Receive = {
         val result = super.selectingPaymentMethod(timer)
         sender ! selectingPaymentMethodMsg
         result
       }
 
-       def processingPayment(timer: Cancellable): Receive = {
+      override def processingPayment(timer: Cancellable): Receive = {
         val result = super.processingPayment(timer)
         sender ! processingPaymentMsg
         result

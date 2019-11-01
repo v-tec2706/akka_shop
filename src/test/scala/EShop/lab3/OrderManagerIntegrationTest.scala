@@ -18,7 +18,7 @@ class OrderManagerIntegrationTest
   with Matchers
   with ScalaFutures {
 
-  implicit val timeout: Timeout = 1.second
+  implicit val timeout: Timeout = 5.second
 
   it should "supervise whole order process" in {
 
@@ -29,6 +29,8 @@ class OrderManagerIntegrationTest
       (orderManager ? message).mapTo[OrderManager.Ack].futureValue shouldBe Done
 
     val orderManager = TestActorRef(new OrderManager())
+
+    orderManager ? "sdsd"
 
     sendMessage(orderManager, AddItem("rollerblades"))
 

@@ -30,8 +30,6 @@ class OrderManagerIntegrationTest
 
     val orderManager = TestActorRef(new OrderManager())
 
-    orderManager ? "sdsd"
-
     sendMessage(orderManager, AddItem("rollerblades"))
 
     sendMessage(orderManager, Buy)

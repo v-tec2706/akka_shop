@@ -38,7 +38,6 @@ class CartActor extends Actor {
       context become nonEmpty(Cart.empty.addItem(item), scheduleTimer)
     case GetItems =>
       sender ! Cart.empty
-    case _ =>
   }
 
   def receive: Receive = empty

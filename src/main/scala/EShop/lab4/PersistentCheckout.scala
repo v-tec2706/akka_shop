@@ -28,21 +28,37 @@ class PersistentCheckout(
 
   def receiveCommand: Receive = {
     case StartCheckout =>
+      log.info("hereeee i am")
       persist(CheckoutStarted) { event =>
+        updateState(event)
+      }
+    case CancelCheckout =>
+      log.info("i'm hereeee2222222")
+      persist(CheckoutCancelled) { event =>
+        updateState(event)
+      }
+    case Expire =>
+      log.info("expired in receive command")
+      persist(CheckoutCancelled) { event =>
         updateState(event)
       }
   }
 
   def selectingDelivery(timer: Cancellable): Receive = LoggingReceive {
     case SelectDeliveryMethod(deliveryType: String) =>
+      timer.cancel()
       persist(DeliveryMethodSelected(deliveryType)) { event =>
+        log.info("i'm hereeee111111")
         updateState(event)
       }
     case CancelCheckout =>
-      persist(CheckOutClosed) { event =>
+      timer.cancel()
+      log.info("i'm hereeee2222222")
+      persist(CheckoutCancelled) { event =>
         updateState(event)
       }
-    case ExpireCheckout =>
+    case Expire =>
+      log.info("expired in selecting delivery")
       persist(CheckoutCancelled) { event =>
         updateState(event)
       }
@@ -50,15 +66,19 @@ class PersistentCheckout(
 
   def selectingPaymentMethod(timer: Cancellable): Receive = LoggingReceive {
     case SelectPayment(paymentType: String) =>
+      timer.cancel()
       val paymentActor = context.actorOf(Props(new Payment(paymentType, context.parent, self)))
       persist(PaymentStarted(paymentActor)) { event =>
+        log.info("!!! select payment in selecting payment")
+        sender ! event
         updateState(event)
       }
     case CancelCheckout =>
-      persist(CheckOutClosed) { event =>
+      log.info("!!! cancel checkout in selecting payment")
+      persist(CheckoutCancelled) { event =>
         updateState(event)
       }
-    case ExpireCheckout =>
+    case Expire =>
       persist(CheckoutCancelled) { event =>
         updateState(event)
       }
@@ -71,31 +91,41 @@ class PersistentCheckout(
   def processingPayment(timer: Cancellable): Receive = LoggingReceive {
     case PaymentStarted(_) =>
     case CancelCheckout =>
+      persist(CheckoutCancelled) { event =>
+        log.info("!!! cancel checkout in processing payment")
+
+        updateState(event)
+      }
+    case ReceivePayment =>
+      timer.cancel()
+      context.parent ! CheckOutClosed
       persist(CheckOutClosed) { event =>
+        log.info("!!! receive payment in processing payment")
+
         updateState(event)
       }
     case ExpireCheckout =>
+      log.info("!!! cancel checkout in processing payment")
+
       persist(CheckoutCancelled) { event =>
         updateState(event)
       }
-    case ExpirePayment =>
+    case Expire =>
       persist(CheckoutCancelled) { event =>
+        log.info("!!! expire in processing payment")
+
         updateState(event)
       }
   }
 
   def cancelled: Receive = LoggingReceive {
-    case _ =>
-      persist(CheckoutCancelled) { event =>
-        updateState(event)
-      }
+    case message =>
+      log.info("received in cancelled", message)
   }
 
   def closed: Receive = LoggingReceive {
-    case _ =>
-      persist(CheckOutClosed) { event =>
-        updateState(event)
-      }
+    case message =>
+      log.info("received in closed", message)
   }
 
   override def receiveRecover: Receive = {

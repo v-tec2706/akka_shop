@@ -1,11 +1,5 @@
 package EShop.lab4
 
-import EShop.lab3.Payment
-import akka.actor.{ActorRef, ActorSystem, Cancellable, Props}
-import akka.event.{Logging, LoggingReceive}
-import akka.persistence.PersistentActor
-
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -19,8 +13,6 @@ class PersistentCheckout(
   cartActor: ActorRef,
   val persistenceId: String
 ) extends PersistentActor {
-
-  import EShop.lab2.Checkout._
   private val scheduler = context.system.scheduler
   private val log       = Logging(context.system, this)
   val system = ActorSystem("Lab4")
@@ -28,17 +20,14 @@ class PersistentCheckout(
 
   def receiveCommand: Receive = {
     case StartCheckout =>
-      log.info("hereeee i am")
       persist(CheckoutStarted) { event =>
         updateState(event)
       }
     case CancelCheckout =>
-      log.info("i'm hereeee2222222")
       persist(CheckoutCancelled) { event =>
         updateState(event)
       }
     case Expire =>
-      log.info("expired in receive command")
       persist(CheckoutCancelled) { event =>
         updateState(event)
       }
@@ -48,17 +37,14 @@ class PersistentCheckout(
     case SelectDeliveryMethod(deliveryType: String) =>
       timer.cancel()
       persist(DeliveryMethodSelected(deliveryType)) { event =>
-        log.info("i'm hereeee111111")
         updateState(event)
       }
     case CancelCheckout =>
       timer.cancel()
-      log.info("i'm hereeee2222222")
       persist(CheckoutCancelled) { event =>
         updateState(event)
       }
     case Expire =>
-      log.info("expired in selecting delivery")
       persist(CheckoutCancelled) { event =>
         updateState(event)
       }
@@ -69,12 +55,10 @@ class PersistentCheckout(
       timer.cancel()
       val paymentActor = context.actorOf(Props(new Payment(paymentType, context.parent, self)))
       persist(PaymentStarted(paymentActor)) { event =>
-        log.info("!!! select payment in selecting payment")
         sender ! event
         updateState(event)
       }
     case CancelCheckout =>
-      log.info("!!! cancel checkout in selecting payment")
       persist(CheckoutCancelled) { event =>
         updateState(event)
       }
@@ -92,28 +76,20 @@ class PersistentCheckout(
     case PaymentStarted(_) =>
     case CancelCheckout =>
       persist(CheckoutCancelled) { event =>
-        log.info("!!! cancel checkout in processing payment")
-
         updateState(event)
       }
     case ReceivePayment =>
       timer.cancel()
       context.parent ! CheckOutClosed
       persist(CheckOutClosed) { event =>
-        log.info("!!! receive payment in processing payment")
-
         updateState(event)
       }
     case ExpireCheckout =>
-      log.info("!!! cancel checkout in processing payment")
-
       persist(CheckoutCancelled) { event =>
         updateState(event)
       }
     case Expire =>
       persist(CheckoutCancelled) { event =>
-        log.info("!!! expire in processing payment")
-
         updateState(event)
       }
   }

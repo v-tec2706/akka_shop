@@ -40,6 +40,6 @@ class CartTest
     val checkoutActor = system.actorOf(Props(new Checkout(cart)), "checkout")
     cart ! AddItem("item")
     cart ! StartCheckout
-    expectMsgAllClassOf(CheckoutStarted(checkoutActor).getClass)
+    expectMsgAllClassOf(CheckoutStarted(checkoutActor, Cart.empty).getClass)
   }
 }

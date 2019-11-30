@@ -67,7 +67,7 @@ class OrderManager extends Actor with Timers {
   }
 
   def inCheckout(cartActorRef: ActorRef, senderRef: ActorRef): Receive = LoggingReceive {
-    case CartActor.CheckoutStarted(checkoutRef: ActorRef) =>
+    case CartActor.CheckoutStarted(checkoutRef: ActorRef, cart) =>
       checkoutRef ! Checkout.StartCheckout
       context become inCheckout(checkoutRef)
       senderRef ! Done
